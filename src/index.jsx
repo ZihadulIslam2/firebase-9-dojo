@@ -1,7 +1,11 @@
 import { initializeApp } from 'firebase/app'
 import { getFirestore, collection, getDocs } from 'firebase/firestore'
+import { useState, useEffect, useRef } from 'react'
+
 function Index() {
-  // get the key from firebase for connection
+  const [books, setBooks] = useState([])
+  const [error, setError] = useState(null)
+
   const firebaseConfig = {
     apiKey: 'AIzaSyBaGvCzYCqxSpNczuhCGmL7oS4NROACDoE',
     authDomain: 'fir-9-dojo-3ec94.firebaseapp.com',
@@ -13,21 +17,36 @@ function Index() {
 
   initializeApp(firebaseConfig)
 
-  // int server
   const db = getFirestore()
+  const colRef = useRef(collection(db, 'books')) // Use useRef for colRef
 
-  // collection ref
-  const colRef = collection(db, 'books')
+  useEffect(() => {
+    getDocs(colRef.current) // Access current value of colRef
+      .then((snapshot) => {
+        let booksArray = []
+        snapshot.forEach((doc) => {
+          booksArray.push({ ...doc.data(), id: doc.id })
+        })
+        setBooks(booksArray)
+      })
+      .catch((error) => {
+        setError(error.message)
+      })
+  }, []) // No need to include colRef in the dependency array
 
-  // get collection data
-  getDocs(colRef)
-    .then((snapshot) => {
-      console.log(snapshot.docs)
-    })
-    .catch((error) => {
-      console.log(error)
-    })
+  console.log(books)
 
-  return <div>index</div>
+  return (
+    <div>
+      <h1>Books Name:</h1>
+      {error && <p>Error: {error}</p>}
+      <ul>
+        {books.map((book) => (
+          <li key={book.id}>{book.title}</li>
+        ))}
+      </ul>
+    </div>
+  )
 }
+
 export default Index
